@@ -1,0 +1,79 @@
+<mxfile host="app.diagrams.net" modified="2024-02-12T13:59:24.543Z" agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36 OPR/106.0.0.0" etag="T_ADIIKnZrSyg1G1VyRy" version="23.1.2" type="google">
+  <diagram name="Page-1" id="QuY2IIH2_zDAMURdfDTk">
+    <mxGraphModel grid="1" page="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="iAyhJhXsgiEoeJHSocAf-3" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;flowAnimation=1;" edge="1" parent="1" source="iAyhJhXsgiEoeJHSocAf-1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="425" y="250" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="iAyhJhXsgiEoeJHSocAf-12" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;flowAnimation=1;" edge="1" parent="1" source="iAyhJhXsgiEoeJHSocAf-1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="200" y="120" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="iAyhJhXsgiEoeJHSocAf-1" value="CSV file with information:&lt;br&gt;1. In which category were the funds spent in?&amp;nbsp;&lt;br&gt;2. How much was spent in a singular transaction." style="rounded=0;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1">
+          <mxGeometry x="320" y="70" width="210" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="2-n8GsOWL4eujsZnw6PL-1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;dashed=1;dashPattern=8 8;strokeWidth=1;labelBorderColor=none;targetPerimeterSpacing=1;sourcePerimeterSpacing=1;jumpStyle=gap;shadow=0;flowAnimation=1;" edge="1" parent="1" source="iAyhJhXsgiEoeJHSocAf-2">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="425" y="610" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="iAyhJhXsgiEoeJHSocAf-2" value="Python file to open the CSV file and export the information from there into local variables." style="rounded=0;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1">
+          <mxGeometry x="320" y="440" width="210" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="2-n8GsOWL4eujsZnw6PL-2" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;flowAnimation=1;" edge="1" parent="1" source="iAyhJhXsgiEoeJHSocAf-4">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="425" y="780" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="iAyhJhXsgiEoeJHSocAf-4" value="Local variable (dictionary) to store data in the format Key[Category]: Value[Amount]" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1">
+          <mxGeometry x="320" y="620" width="210" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="iAyhJhXsgiEoeJHSocAf-7" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;flowAnimation=1;" edge="1" parent="1" source="iAyhJhXsgiEoeJHSocAf-6">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="425" y="430" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="iAyhJhXsgiEoeJHSocAf-8" value="Yes" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" vertex="1" connectable="0" parent="iAyhJhXsgiEoeJHSocAf-7">
+          <mxGeometry x="-0.1115" relative="1" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="iAyhJhXsgiEoeJHSocAf-9" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;flowAnimation=1;" edge="1" parent="1" source="iAyhJhXsgiEoeJHSocAf-6">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="650" y="300" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="iAyhJhXsgiEoeJHSocAf-10" value="No" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" vertex="1" connectable="0" parent="iAyhJhXsgiEoeJHSocAf-9">
+          <mxGeometry x="0.1196" relative="1" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="iAyhJhXsgiEoeJHSocAf-6" value="Python file to check if the CSV file can be read?" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1">
+          <mxGeometry x="320" y="250" width="210" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="iAyhJhXsgiEoeJHSocAf-11" value="Display error to the user" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1">
+          <mxGeometry x="650" y="255" width="150" height="90" as="geometry" />
+        </mxCell>
+        <mxCell id="iAyhJhXsgiEoeJHSocAf-14" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;flowAnimation=1;" edge="1" parent="1" source="iAyhJhXsgiEoeJHSocAf-13">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="320" y="120" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="iAyhJhXsgiEoeJHSocAf-13" value="In Django, to create forms whereby user enters data instead of using pre-prepared CSV file." style="shape=hexagon;perimeter=hexagonPerimeter2;whiteSpace=wrap;html=1;fixedSize=1;fillColor=#f8cecc;strokeColor=#b85450;" vertex="1" parent="1">
+          <mxGeometry x="60" y="60" width="140" height="120" as="geometry" />
+        </mxCell>
+        <mxCell id="2-n8GsOWL4eujsZnw6PL-3" value="Create the Pie Chart with the given information. It has to be created in the following way:&amp;nbsp;&lt;br&gt;1. The size of each slice depends on amount involved, not the number of times a specific category has been used.&amp;nbsp;&lt;br&gt;2. Each slice should display the category of the spending and the total amount spent there.&amp;nbsp;&lt;br&gt;3. Each slice should also display what percentage of the whole it represents." style="rounded=0;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1">
+          <mxGeometry x="300" y="780" width="265" height="140" as="geometry" />
+        </mxCell>
+        <mxCell id="Gom6mGiuJm-WKZLFffjZ-4" value="IDEA FOR NOW" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="90" y="20" width="70" height="30" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
