@@ -3,6 +3,8 @@ import errno
 import sys
 import matplotlib
 
+print("hello title")
+
 matplotlib.use('TkAgg')  # Use the agg backend
 import matplotlib.pyplot as plt
 
