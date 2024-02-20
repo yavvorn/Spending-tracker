@@ -16,20 +16,26 @@ try:
     with open('../spending.csv', 'r') as file:
         # Creating a CSV reader object
         csv_file = csv.reader(file)
+        line = 0
 
         # Iterating through the lines of data in the CSV file
         for row in csv_file:
-            amount, category = float(row[0]), row[1]
+            if line == 0:
+                line += 1
+                continue
+            else:
+                line += 1
+                amount, category = float(row[0]), row[1]
             # Checking if the category is valid
-            if category not in ALLOWED_CATEGORIES:
-                print("Invalid category!")
-                sys.exit(1)  # Might be an overkill
+                if category not in ALLOWED_CATEGORIES:
+                    print("Invalid category!")
+                    sys.exit(1)  # Might be an overkill
 
             # Updating the dictionary with data
-            if category not in overall_usage:
-                overall_usage[category] = amount
-            else:
-                overall_usage[category] += amount
+                if category not in overall_usage:
+                    overall_usage[category] = amount
+                else:
+                    overall_usage[category] += amount
 
 # Error Handling
 except IOError as x:
