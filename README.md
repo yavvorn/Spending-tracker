@@ -7,10 +7,11 @@ that has slices for each category of spending, including total amount and percen
 
 
 How to run the project locally:
-1. Download the project on your PC. 
-2. Ensure the used Python version is Python 3.9.
-3. Install the Matplotlib library by typing in the terminal 'pip install Matplotlib'.
-4. Run the project.
+1. Download the project on your PC.
+2. Open the project through PyCharm.
+3. To run the project, the user must activate activate the dependency manager - Poetry. This is done by first installing poetry to the virtual environment by typing '-pip install poetry' in the terminal.
+4. Once Poetry is installed, the user has to type 'poetry install' in the terminal. This command reads the .toml file from the project, resolves the dependencies, and installs them.
+7. Run the project.
 
 As things stand, the information upon which the pie chart is created is static. This means that data needs to be manually 
 added in the CSV file. Further down the line, this will be changed to ensure seamless usage. 
