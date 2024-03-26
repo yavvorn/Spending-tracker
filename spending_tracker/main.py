@@ -1,5 +1,4 @@
 import csv
-import errno
 import matplotlib
 import matplotlib.pyplot as plt
 

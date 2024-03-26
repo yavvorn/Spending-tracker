@@ -1,9 +1,7 @@
 import os
-import csv
 import tempfile
 import unittest
 from unittest.mock import patch
-import spending_tracker
 from spending_tracker.main import main, csv_reader, get_autopct_formatter, pie_chart_data_gathering
 
 
