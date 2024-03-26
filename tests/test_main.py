@@ -1,46 +1,64 @@
+import os
 import csv
+import tempfile
 import unittest
-from spending_tracker.main import autopct_format, overall_usage
+from unittest.mock import patch
+import spending_tracker
+from spending_tracker.main import main, csv_reader, get_autopct_formatter, pie_chart_data_gathering
 
 
-class TestCSVData(unittest.TestCase):
-    def setUp(self):
-        self.csv_data = "Amount,Category\n" \
-                        "13,Food\n" \
-                        "150,Food\n" \
-                        "25,Entertainment\n" \
-                        "50,Entertainment\n" \
-                        "70,Necessities\n" \
-                        "40,Cash\n" \
-                        "40,Cash\n" \
-                        "14,Cash\n" \
-                        "15.14,Bills\n"
+class TestSpendingTracker(unittest.TestCase):
 
-    def test_autopct_format(self):
-        self.assertEqual(autopct_format(25), '£104.28\n(25.00%)')
-        self.assertEqual(autopct_format(50), '£208.57\n(50.00%)')
-        self.assertEqual(autopct_format(75), '£312.86\n(75.00%)')
+    def test_csv_reader_invalid_path(self):
+        invalid_path = 'non_existent_file.csv'
+        result = csv_reader(invalid_path)
+        self.assertEqual(False, result["status"])
+        self.assertEqual("File not found.", result["message"])
 
-    def test_valid_category_totals(self):
-        self.assertEqual(overall_usage.get('Food', 0), 163.0)
-        self.assertEqual(overall_usage.get('Entertainment', 0), 75.0)
+    def test_csv_reader_permission_error(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            mock_csv_path = os.path.join(temp_dir, 'mock_file.csv')
+            print(mock_csv_path)
+            csv_content = "category,amount\nFood,50\nEntertainment,30\n"
+            with open(mock_csv_path, 'w') as file:
+                file.write(csv_content)
+            # Mock the open function to raise a PermissionError
+            with patch('builtins.open', side_effect=PermissionError):
+                result = csv_reader(mock_csv_path)
+                self.assertEqual(False, result["status"])
+                self.assertEqual("Input file cannot be read.", result["message"])
 
-    def test_calculate_totals(self):
-        totals = {}
-        csv_reader = csv.DictReader(self.csv_data.splitlines())
-        for row in csv_reader:
-            category = row['Category']
-            amount = float(row['Amount'])
-            if category in totals:
-                totals[category] += amount
-            else:
-                totals[category] = amount
+    def test_csv_reader_negative_amount(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            mock_csv_path = os.path.join(temp_dir, 'mock_file.csv')
+            csv_content = "category,amount\nFood,-50\nEntertainment,30\n"
+            with open(mock_csv_path, 'w') as file:
+                file.write(csv_content)
+            with patch('builtins.print') as mock_print:
+                result = csv_reader(mock_csv_path)
+            self.assertEqual(result, {'Entertainment': 30.0})
+            mock_print.assert_called_once_with("Amount must be positive!")
 
-        self.assertEqual(totals['Food'], 163)
-        self.assertEqual(totals['Entertainment'], 75)
-        self.assertEqual(totals['Necessities'], 70)
-        self.assertEqual(totals['Cash'], 94)
-        self.assertEqual(totals['Bills'], 15.14)
+    def test_autopct_formatting_for_percentage_0(self):
+        sizes = [100, 0]
+        formatter = get_autopct_formatter(sizes)
+        expected_result = '£0.00\n(0.00%)'
+        self.assertEqual(formatter(0), expected_result)
+
+    def test_autopct_formatting_for_percentage_1(self):
+        sizes = [99, 1]
+        formatter = get_autopct_formatter(sizes)
+        expected_result = '£1.00\n(1.00%)'
+        self.assertEqual(formatter(1), expected_result)
+
+    def test_autopct_formatting_for_single_value(self):
+        single_formatter = get_autopct_formatter([100])
+        self.assertEqual(single_formatter(100), '£100.00\n(100.00%)')
+
+    def test_pie_chart_data_gathering(self):
+        empty_formatter = pie_chart_data_gathering({})
+        expected_result = "Unable to generate pie chart."
+        self.assertEqual(empty_formatter, expected_result)
 
 
 if __name__ == '__main__':
