@@ -1,3 +1,4 @@
+from typing import Union
 import csv
 from typing import Union
 import matplotlib
@@ -15,6 +16,13 @@ def main():
 
 
 def validate_row(record: dict) -> tuple[bool, Union[str, None]]:
+    """
+    Validates a spending record/row and returns a tuple: (is_valid, error_message)
+    is_valid: True if the row is valid, False if not
+    error_message: What is the error message if the row is not valid otherwise None
+    :param record: Spending record
+    :return: is_valid, error_message
+    """
     amount = float(record['amount'])
     if amount < 0:
         return False, "Amount must be positive!"
@@ -27,7 +35,7 @@ def validate_row(record: dict) -> tuple[bool, Union[str, None]]:
 def csv_reader(csv_path):
     overall_usage = {}
     try:
-        with open(csv_path, 'r') as file:
+        with open(csv_path, "r") as file:
             csv_file = csv.DictReader(file)
             for row in csv_file:
                 amount = float(row["amount"])
@@ -83,5 +91,3 @@ def pie_chart_data_gathering(overall_usage):
 
 if __name__ == '__main__':
     main()
-
-
