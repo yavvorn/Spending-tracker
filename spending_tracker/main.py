@@ -1,4 +1,5 @@
 import csv
+from typing import Union
 import matplotlib
 import matplotlib.pyplot as plt
 
@@ -13,19 +14,27 @@ def main():
         pie_chart_data_gathering(overall_usage)
 
 
+def validate_row(record: dict) -> tuple[bool, Union[str, None]]:
+    amount = float(record['amount'])
+    if amount < 0:
+        return False, "Amount must be positive!"
+    category = record['category']
+    if category not in ALLOWED_CATEGORIES:
+        return False, f"{category} is an invalid category!"
+    return True, None
+
+
 def csv_reader(csv_path):
     overall_usage = {}
     try:
         with open(csv_path, 'r') as file:
             csv_file = csv.DictReader(file)
             for row in csv_file:
-                amount = float(row['amount'])
-                if amount < 0:
-                    print("Amount must be positive!")
-                    continue
-                category = row['category']
-                if category not in ALLOWED_CATEGORIES:
-                    print(f"{category} is an invalid category!")
+                amount = float(row["amount"])
+                category = row["category"]
+                is_valid, error_message = validate_row(row)
+                if not is_valid:
+                    print(f"Invalid row: {error_message}")
                     continue
                 if category not in overall_usage:
                     overall_usage[category] = amount

@@ -7,6 +7,16 @@ from spending_tracker.main import main, csv_reader, get_autopct_formatter, pie_c
 
 class TestSpendingTracker(unittest.TestCase):
 
+    def test_csv_reader_positive(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            mock_csv_path = os.path.join(temp_dir, 'mock_file.csv')
+            csv_content = "category,amount\nFood,50\nEntertainment,30\n"
+            with open(mock_csv_path, 'w') as file:
+                file.write(csv_content)
+            result = csv_reader(mock_csv_path)
+            expected = {"Food": 50, "Entertainment": 30}
+            self.assertEqual(result, expected)
+
     def test_csv_reader_invalid_path(self):
         invalid_path = 'non_existent_file.csv'
         result = csv_reader(invalid_path)
@@ -16,11 +26,9 @@ class TestSpendingTracker(unittest.TestCase):
     def test_csv_reader_permission_error(self):
         with tempfile.TemporaryDirectory() as temp_dir:
             mock_csv_path = os.path.join(temp_dir, 'mock_file.csv')
-            print(mock_csv_path)
             csv_content = "category,amount\nFood,50\nEntertainment,30\n"
             with open(mock_csv_path, 'w') as file:
                 file.write(csv_content)
-            # Mock the open function to raise a PermissionError
             with patch('builtins.open', side_effect=PermissionError):
                 result = csv_reader(mock_csv_path)
                 self.assertEqual(False, result["status"])
@@ -35,7 +43,7 @@ class TestSpendingTracker(unittest.TestCase):
             with patch('builtins.print') as mock_print:
                 result = csv_reader(mock_csv_path)
             self.assertEqual(result, {'Entertainment': 30.0})
-            mock_print.assert_called_once_with("Amount must be positive!")
+            mock_print.assert_called_once_with("Invalid row: Amount must be positive!")
 
     def test_autopct_formatting_for_percentage_0(self):
         sizes = [100, 0]
