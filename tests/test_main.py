@@ -14,14 +14,13 @@ class TestSpendingTracker(unittest.TestCase):
             with open(mock_csv_path, 'w') as file:
                 file.write(csv_content)
             result = csv_reader(mock_csv_path)
-            expected = {"Food": 50, "Entertainment": 30}
+            expected = ({'Entertainment': 30.0, 'Food': 50.0}, None)
             self.assertEqual(result, expected)
 
     def test_csv_reader_invalid_path(self):
-        invalid_path = 'non_existent_file.csv'
-        result = csv_reader(invalid_path)
-        self.assertEqual(False, result["status"])
-        self.assertEqual("File not found.", result["message"])
+        overall_usage, error_message = csv_reader('non_existent_file.csv')
+        self.assertEqual(overall_usage, {})
+        self.assertEqual(error_message, "Input file not found.")
 
     def test_csv_reader_permission_error(self):
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -29,10 +28,10 @@ class TestSpendingTracker(unittest.TestCase):
             csv_content = "category,amount\nFood,50\nEntertainment,30\n"
             with open(mock_csv_path, 'w') as file:
                 file.write(csv_content)
-            with patch('builtins.open', side_effect=PermissionError):
-                result = csv_reader(mock_csv_path)
-                self.assertEqual(False, result["status"])
-                self.assertEqual("Input file cannot be read.", result["message"])
+            with patch('builtins.open', side_effect=PermissionError("Input file cannot be read.")):
+                overall_usage, error_message = csv_reader(mock_csv_path)
+                self.assertEqual(overall_usage, {})
+                self.assertEqual(error_message, "Input file cannot be read.")
 
     def test_csv_reader_negative_amount(self):
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -42,7 +41,7 @@ class TestSpendingTracker(unittest.TestCase):
                 file.write(csv_content)
             with patch('builtins.print') as mock_print:
                 result = csv_reader(mock_csv_path)
-            self.assertEqual(result, {'Entertainment': 30.0})
+            self.assertEqual(result, ({'Entertainment': 30.0}, None))
             mock_print.assert_called_once_with("Invalid row: Amount must be positive!")
 
     def test_autopct_formatting_for_percentage_0(self):
@@ -61,9 +60,9 @@ class TestSpendingTracker(unittest.TestCase):
         single_formatter = get_autopct_formatter([100])
         self.assertEqual(single_formatter(100), '£100.00\n(100.00%)')
 
-    def test_pie_chart_data_gathering(self):
-        empty_formatter = pie_chart_data_gathering({})
-        expected_result = "Unable to generate pie chart."
+    def test_empty_pie_chart_data_gathering(self):
+        empty_formatter = pie_chart_data_gathering({}, "")
+        expected_result = "Cannot generate pie chart."
         self.assertEqual(empty_formatter, expected_result)
 
 
