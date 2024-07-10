@@ -6,8 +6,9 @@ authors = ["Yavor"]
 readme = "README.md"
 
 [tool.poetry.dependencies]
-python = "3.12"
+python = "3.10.*"
 matplotlib = "^3.8.3"
+flask = "^3.0.3"
 
 
 [build-system]
