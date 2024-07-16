@@ -1,92 +1,163 @@
-from flask import Flask, request
+from flask import Flask, request, jsonify, g, render_template, redirect, url_for
+import psycopg2
+from psycopg2 import pool
 
 app = Flask(__name__)
 
 ALLOWED_CATEGORIES = ['Entertainment', 'Bills', 'Food', 'Cash', 'Necessities']
 PATH_TO_CSV_FILE = '../spending.csv'
 
-expenses = {
-    1: {"id": 1, "expense": "Entertainment", "value": 50},
-    2: {"id": 2, "expense": "Bills", "value": 50},
-    3: {"id": 3, "expense": "Food", "value": 50},
-    4: {"id": 4, "expense": "Necessities", "value": 50},
-    5: {"id": 5, "expense": "Cash", "value": 10}
-}
+db_pool = pool.SimpleConnectionPool(1, 20, database="Finance_tracker",
+                                    user="postgres",
+                                    password="pass1234!",
+                                    host="localhost", port="5432")
+
+# Function to get connection from the pool
+def get_db():
+    if 'db' not in g:
+        g.db = db_pool.getconn()
+    return g.db
+
+# Function to close connection and return it to the pool
+@app.teardown_appcontext
+def teardown_db(exception):
+    db = g.pop('db', None)
+    if db is not None:
+        db_pool.putconn(db)
 
 
-# TODO - ERROR HANDLING
+@app.route('/')
+def index():
+    conn = get_db()
+    cur = None
+    data = []
+    try:
+        # Create a cursor
+        cur = conn.cursor()
 
-@app.route('/expenses', methods=['GET'])
-def expense_data():
-    """
-    Returns all of the expenses.
-    """
-    return expenses.values()
+        # Select all expenses from the table
+        cur.execute("SELECT * FROM expenses ORDER BY expense")
+
+        # Fetch the data
+        data = cur.fetchall()
+    finally:
+        if cur is not None:
+            cur.close()
+
+    return render_template('index.html', data=data)
+
+# @app.route('/expenses/<int:expense_id>', methods=['GET'])
+# def get_expense(expense_id):
+#     """
+#     Returns a particular expense and if nonexistent returns an error.
+#     """
+#     expense = expenses.get(expense_id)
+#     if expense is None:
+#         return {'error': 'Transaction not found'}, 404
+#     return expense
 
 
-@app.route('/expenses/<int:expense_id>', methods=['GET'])
-def get_expense(expense_id):
-    """
-    Returns a particular expense and if nonexistent returns an error.
-    """
-    expense = expenses.get(expense_id)
-    if expense is None:
-        return {'error': 'Transaction not found'}, 404
-    return expense
-
-
-@app.route('/expenses', methods=['POST'])
+@app.route('/create', methods=['POST'])
 def create_expense():
-    """
-    Creates a new expense.
-    """
-    new_id = len(expenses) + 1
-    new_expense = {'id': new_id, 'expense': request.json['expense'], 'value': request.json['value']}
-    expenses[new_id] = new_expense
-    return new_expense, 201
+    # Handle form data
+    conn = get_db()
+    cur = None
+
+    try:
+        # Parse form data from request
+        expense_name = request.form['expense'] # expects standard application/x-www-form-urlencoded content-type
+        expense_value = request.form['value']
+
+        # Create a cursor object using the connection
+        cur = conn.cursor()
+
+        # Execute a query to insert new expense into the table
+        cur.execute("INSERT INTO expenses (expense, value) VALUES (%s, %s)", (expense_name, expense_value))
+        conn.commit()  # Commit the transaction
+
+        return redirect(url_for('index'))
+
+        # Return new expense as JSON with HTTP status code 201 (Created)
+    except Exception as e:
+        conn.rollback()  # Rollback the transaction in case of error
+        return str(e), 400  # Return error message with HTTP status code 400 (Bad Request)
+    finally:
+        if cur is not None:
+            cur.close()
 
 
-@app.route('/expenses/<int:expense_id>', methods=['PUT'])
-def update_expense(expense_id):
-    """
-    Updates an already existing expense.
-    """
-    expense = expenses.get(expense_id)
-    if expense is None:
-        return {'error': 'Transaction not found'}, 404
+@app.route('/update', methods=['POST'])
+def update_expense():
+    conn = get_db()
+    cur = None
 
-    expense['expense'] = request.json['expense']
-    expense['value'] = request.json['value']
-    return expense
+    try:
+        # Parse form data from request
+        expense_id = request.form['expense_id']
+        expense_name = request.form['expense']
+        expense_value = request.form['value']
+
+        # Create a cursor object using the connection
+        cur = conn.cursor()
+
+        # Execute a query to update the expense in the table
+        cur.execute("UPDATE expenses SET expense = %s, value = %s WHERE id = %s", (expense_name, expense_value, expense_id))
+        conn.commit()  # Commit the transaction
+
+        return redirect(url_for('index'))
+
+    except Exception as e:
+        conn.rollback()  # Rollback the transaction in case of error
+        return str(e), 400  # Return error message with HTTP status code 400 (Bad Request)
+    finally:
+        if cur is not None:
+            cur.close()
+        if conn is not None:
+            conn.close()  # Close the connection
 
 
-@app.route('/expenses/<int:expense_id>', methods=['DELETE'])
+
+@app.route('/delete/<int:expense_id>', methods=['DELETE', 'POST'])
 def delete_expense(expense_id):
     """
     Removes an existing expense.
     """
-
+    conn = get_db()
+    cur = None
     try:
-        del expenses[expense_id]
-    except KeyError:
-        return {"error": "Transaction doesn't exist"}, 404
+        # Create a cursor object using the connection
+        cur = conn.cursor()
 
-    return {"message": f"Expense {expense_id} removed successfully"}
+        # Execute a query to delete expense from the table
+        cur.execute("DELETE FROM expenses WHERE id = %s", (expense_id,))
+        conn.commit()  # Commit the transaction
+
+        return redirect(url_for('index'))
+
+    except Exception as e:
+        conn.rollback()  # Rollback the transaction in case of error
+        return str(e), 400  # Return error message with HTTP status code 400 (Bad Request)
+
+    finally:
+        if cur is not None:
+            cur.close()
+        if conn is not None:
+            conn.close()
 
 
-@app.route('/statistics', methods=['GET'])
-def get_statistics():
-    """
-    Gets and displays the statistics.
-    """
-    overall_usage = {}
-    for expense in expenses.values():
-        if expense['expense'] not in overall_usage.keys():
-            overall_usage[expense['expense']] = expense['value']
-        else:
-            overall_usage[expense['expense']] += expense['value']
-
-    return overall_usage
+# @app.route('/statistics', methods=['GET'])
+# def get_statistics():
+#     """
+#     Gets and displays the statistics.
+#     """
+#     overall_usage = {}
+#     for expense in expenses.values():
+#         if expense['expense'] not in overall_usage.keys():
+#             overall_usage[expense['expense']] = expense['value']
+#         else:
+#             overall_usage[expense['expense']] += expense['value']
+#
+#     return overall_usage
 
 
 if __name__ == '__main__':
