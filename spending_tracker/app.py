@@ -57,33 +57,31 @@ def index():
 #     return expense
 
 
-@app.route('/create', methods=['POST'])
+@app.route('/expenses', methods=['POST'])
 def create_expense():
-    # Handle form data
+    """
+        Creates a new expense.
+     """
     conn = get_db()
     cur = None
 
     try:
-        # Parse form data from request
-        expense_name = request.form['expense'] # expects standard application/x-www-form-urlencoded content-type
-        expense_value = request.form['value']
+        expense_name = request.json['expense']
+        expense_value = request.json['value']
 
         # Create a cursor object using the connection
         cur = conn.cursor()
 
         # Execute a query to insert new expense into the table
-        cur.execute("INSERT INTO expenses (expense, value) VALUES (%s, %s)", (expense_name, expense_value))
+        result = cur.execute("INSERT INTO expenses (expense, value) VALUES (%s, %s)", (expense_name, expense_value))
         conn.commit()  # Commit the transaction
-
-        return redirect(url_for('index'))
-
-        # Return new expense as JSON with HTTP status code 201 (Created)
     except Exception as e:
         conn.rollback()  # Rollback the transaction in case of error
         return str(e), 400  # Return error message with HTTP status code 400 (Bad Request)
     finally:
         if cur is not None:
             cur.close()
+    return dict(result), 201
 
 
 @app.route('/update', methods=['POST'])
