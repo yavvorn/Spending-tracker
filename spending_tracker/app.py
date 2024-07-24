@@ -1,24 +1,59 @@
 from flask import Flask, request, jsonify, g, render_template, redirect, url_for
-import psycopg2
-from psycopg2 import pool
+from config import db_pool
 
 app = Flask(__name__)
 
-ALLOWED_CATEGORIES = ['Entertainment', 'Bills', 'Food', 'Cash', 'Necessities']
-PATH_TO_CSV_FILE = '../spending.csv'
 
-db_pool = pool.SimpleConnectionPool(1, 20, database="Finance_tracker",
-                                    user="postgres",
-                                    password="pass1234!",
-                                    host="localhost", port="5432")
-
-# Function to get connection from the pool
+# Function to get connection from the pool - it checks if a database
+# is connected to the Flask obj g and if there isn't it connects the db to it
 def get_db():
     if 'db' not in g:
         g.db = db_pool.getconn()
     return g.db
 
-# Function to close connection and return it to the pool
+
+def create_cursor():
+    conn = get_db()
+    cur = None
+    try:
+        cur = conn.cursor()
+    except Exception as e:
+        return None  # should it return something else in this case?
+    return cur, conn
+
+
+def query_executor_get(cur, query, args=None):
+    data = None
+    try:
+        if args is not None:
+            cur.execute(query, args)
+        else:
+            cur.execute(query)
+        data = cur.fetchall()
+    except TypeError as e:
+        return {"error": str(e)}, 400
+    finally:
+        if cur is not None:
+            cur.close()
+    return data
+
+
+def query_executor_post(cur, query, args=None):
+    try:
+        if args is not None:
+            cur.execute(query, args)
+        else:
+            cur.execute(query)
+    except TypeError as e:
+        return {"error": str(e)}, 400  # Returning a dictionary with an error message and HTTP status code
+    finally:
+        if cur is not None:
+            cur.close()
+    return "Action carried out successfully!"  # this is also applied to PUT and  POST
+
+
+# Function to close connection and return it to the pool - once a request is done,
+# the connection is returned to the pool in order to be re-used - this is done automatically by Flask
 @app.teardown_appcontext
 def teardown_db(exception):
     db = g.pop('db', None)
@@ -26,138 +61,90 @@ def teardown_db(exception):
         db_pool.putconn(db)
 
 
-@app.route('/')
-def index():
-    conn = get_db()
-    cur = None
-    data = []
-    try:
-        # Create a cursor
-        cur = conn.cursor()
+@app.route('/', methods=["GET"])
+def expense_data():
+    """
+    Returns all the expenses from the database.
+    """
+    cur, conn = create_cursor()
+    data = query_executor_get(cur, "SELECT expense, value FROM expenses ORDER BY expense")
+    if data is None:
+        return {"error": "Cannot retrieve data"}
 
-        # Select all expenses from the table
-        cur.execute("SELECT * FROM expenses ORDER BY expense")
-
-        # Fetch the data
-        data = cur.fetchall()
-    finally:
-        if cur is not None:
-            cur.close()
-
-    return render_template('index.html', data=data)
-
-# @app.route('/expenses/<int:expense_id>', methods=['GET'])
-# def get_expense(expense_id):
-#     """
-#     Returns a particular expense and if nonexistent returns an error.
-#     """
-#     expense = expenses.get(expense_id)
-#     if expense is None:
-#         return {'error': 'Transaction not found'}, 404
-#     return expense
+    return dict(data), 200
 
 
-@app.route('/create', methods=['POST'])
+@app.route('/expenses/<int:expense_id>', methods=['GET'])
+def get_expense(expense_id):
+    """
+    Returns a particular expense and if nonexistent returns an error.
+    """
+    cur, conn = create_cursor()
+    query = "SELECT expense, value FROM expenses WHERE id = %s"
+    expense = query_executor_get(cur, query, (expense_id,))
+
+    if not expense:
+        return {"error": "Expense doesn't exist"}, 404
+
+    return dict(expense), 200
+
+
+@app.route('/expenses', methods=['POST'])
 def create_expense():
-    # Handle form data
-    conn = get_db()
-    cur = None
+    """
+    Creates a new expense
+    """
+    data = request.get_json()
+    # what exactly happens here when the request doesn't come from the front end?
+    # How is the data extracted from the postman/terminal? Is this the only way this can work?
+    expense_name = data.get('expense')
+    expense_value = data.get('value')
 
-    try:
-        # Parse form data from request
-        expense_name = request.form['expense'] # expects standard application/x-www-form-urlencoded content-type
-        expense_value = request.form['value']
+    # this is how it used to be, is this how it should be once we have frontend?
+    # expense_name = request.json['expense']
+    # expense_value = request.json['value']
+    cur, conn = create_cursor()
+    query = "INSERT INTO expenses (expense, value) VALUES (%s, %s)"
+    expense = query_executor_post(cur, query, (expense_name, expense_value))
+    conn.commit()
 
-        # Create a cursor object using the connection
-        cur = conn.cursor()
-
-        # Execute a query to insert new expense into the table
-        cur.execute("INSERT INTO expenses (expense, value) VALUES (%s, %s)", (expense_name, expense_value))
-        conn.commit()  # Commit the transaction
-
-        return redirect(url_for('index'))
-
-        # Return new expense as JSON with HTTP status code 201 (Created)
-    except Exception as e:
-        conn.rollback()  # Rollback the transaction in case of error
-        return str(e), 400  # Return error message with HTTP status code 400 (Bad Request)
-    finally:
-        if cur is not None:
-            cur.close()
+    return expense, 201
 
 
-@app.route('/update', methods=['POST'])
+@app.route('/update', methods=['PUT'])
 def update_expense():
-    conn = get_db()
-    cur = None
+    """
+    Update an already existing expense
+    """
+    data = request.get_json()
 
-    try:
-        # Parse form data from request
-        expense_id = request.form['expense_id']
-        expense_name = request.form['expense']
-        expense_value = request.form['value']
+    expense_name = data.get('expense')
+    expense_value = data.get('value')
+    expense_id = data.get("id")
 
-        # Create a cursor object using the connection
-        cur = conn.cursor()
+    cur, conn = create_cursor()
+    query = "UPDATE expenses SET expense = %s, value = %s WHERE id = %s"
+    expense = query_executor_post(cur, query, (expense_name, expense_value, expense_id))
+    conn.commit()
 
-        # Execute a query to update the expense in the table
-        cur.execute("UPDATE expenses SET expense = %s, value = %s WHERE id = %s", (expense_name, expense_value, expense_id))
-        conn.commit()  # Commit the transaction
-
-        return redirect(url_for('index'))
-
-    except Exception as e:
-        conn.rollback()  # Rollback the transaction in case of error
-        return str(e), 400  # Return error message with HTTP status code 400 (Bad Request)
-    finally:
-        if cur is not None:
-            cur.close()
-        if conn is not None:
-            conn.close()  # Close the connection
+    return expense, 204  # it's not printing the string from the query_executor_post
 
 
-
-@app.route('/delete/<int:expense_id>', methods=['DELETE', 'POST'])
+@app.route('/delete/<int:expense_id>', methods=['DELETE'])
 def delete_expense(expense_id):
     """
     Removes an existing expense.
     """
-    conn = get_db()
-    cur = None
-    try:
-        # Create a cursor object using the connection
-        cur = conn.cursor()
 
-        # Execute a query to delete expense from the table
-        cur.execute("DELETE FROM expenses WHERE id = %s", (expense_id,))
-        conn.commit()  # Commit the transaction
+    cur, conn = create_cursor()
+    query = "DELETE FROM expenses WHERE id = %s"
+    expense = query_executor_post(cur, query, (expense_id,))
+    conn.commit()
 
-        return redirect(url_for('index'))
+    if not expense:
+        return {"error": "Cannot retrieve expense"}, 404
 
-    except Exception as e:
-        conn.rollback()  # Rollback the transaction in case of error
-        return str(e), 400  # Return error message with HTTP status code 400 (Bad Request)
-
-    finally:
-        if cur is not None:
-            cur.close()
-        if conn is not None:
-            conn.close()
-
-
-# @app.route('/statistics', methods=['GET'])
-# def get_statistics():
-#     """
-#     Gets and displays the statistics.
-#     """
-#     overall_usage = {}
-#     for expense in expenses.values():
-#         if expense['expense'] not in overall_usage.keys():
-#             overall_usage[expense['expense']] = expense['value']
-#         else:
-#             overall_usage[expense['expense']] += expense['value']
-#
-#     return overall_usage
+    return expense
 
 
 if __name__ == '__main__':
