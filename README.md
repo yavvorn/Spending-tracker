@@ -12,6 +12,3 @@ How to run the project locally:
 3. To run the project, the user must activate activate the dependency manager - Poetry. This is done by first installing poetry to the virtual environment by typing '-pip install poetry' in the terminal.
 4. Once Poetry is installed, the user has to type 'poetry install' in the terminal. This command reads the .toml file from the project, resolves the dependencies, and installs them.
 5. Run the project.
-
-As things stand, the information upon which the pie chart is created is static. This means that data needs to be manually 
-added in the CSV file. Further down the line, this will be changed to ensure seamless usage. 
