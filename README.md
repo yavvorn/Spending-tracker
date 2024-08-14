@@ -12,3 +12,5 @@ How to run the project locally:
 3. To run the project, the user must activate activate the dependency manager - Poetry. This is done by first installing poetry to the virtual environment by typing '-pip install poetry' in the terminal.
 4. Once Poetry is installed, the user has to type 'poetry install' in the terminal. This command reads the .toml file from the project, resolves the dependencies, and installs them.
 5. Run the project.
+ENV VARS
+DDL SQL steps
