@@ -1,16 +1,9 @@
 from flask import Flask, request, g
 from dotenv import load_dotenv
-from spending_tracker.db import db_pool, query_executor
+from spending_tracker.db import query_executor
 
 load_dotenv()
 app = Flask(__name__)
-
-
-@app.teardown_appcontext
-def teardown_db(exception):
-    db = g.pop('db', None)
-    if db is not None:
-        db_pool.putconn(db)
 
 
 @app.route('/', methods=["GET"])

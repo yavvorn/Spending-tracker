@@ -2,20 +2,21 @@ from flask import g
 from psycopg2 import pool
 import os
 
-db_pool = pool.SimpleConnectionPool(
-    1, 20,
-    database=os.getenv("DB_NAME"),
-    user=os.getenv("DB_USER"),
-    password=os.getenv("DB_PASSWORD"),
-    host=os.getenv("DB_HOST"),
-    port=os.getenv("DB_PORT")
-)
-
 
 def get_db():
-    if 'db' not in g:
-        g.db = db_pool.getconn()
-    return g.db
+    if 'db_pool' not in g:
+        db_pool = pool.SimpleConnectionPool(
+            1, 20,
+            database=os.getenv("DB_NAME"),
+            user=os.getenv("DB_USER"),
+            password=os.getenv("DB_PASSWORD"),
+            host=os.getenv("DB_HOST"),
+            port=os.getenv("DB_PORT")
+        )
+        g.db_pool = db_pool
+
+    db_pool = g.db_pool
+    return db_pool.getconn()
 
 
 def create_cursor():

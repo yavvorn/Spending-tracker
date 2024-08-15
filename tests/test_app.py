@@ -1,18 +1,21 @@
 import sys
 
+from unittest.mock import Mock
+
 from spending_tracker.app import app
-import pytest
 
 def test_home_route():
     response = app.test_client().get("/")
     assert response.status_code == 200
 
 
-def test_get_expense_existing():
-    expense_id = 2
-    response = app.test_client().get(f"/expenses/{expense_id}")
+def test_get_expense_existing(mocker):
+    response_data = {"Food": 50}
+    query_executor_mock = Mock(return_value=response_data)
+    mocker.patch('spending_tracker.app.query_executor', new=query_executor_mock)
+    response = app.test_client().get("/expenses/99")
     assert response.status_code == 200
-    assert response.json == {"Food": 50}
+    assert response.json == response_data
 
 
 def test_get_expense_non_existent():
