@@ -46,8 +46,9 @@ def create_expense():
         query = "INSERT INTO expenses (expense, value) VALUES (%s, %s)"
         query_executor(query, (expense_name, expense_value), get_result=False)
         return {}, 201
+
     except Exception as e:
-        return {"error": "Failed to create expense"}, 500
+        return {"error": "Failed to create expense"}, 400
 
 
 @app.route('/update', methods=['PUT'])
@@ -59,16 +60,17 @@ def update_expense():
 
     expense_name = data.get('expense')
     expense_value = data.get('value')
-
     expense_id = data.get("id")
 
-    query = "UPDATE expenses SET expense = %s, value = %s WHERE id = %s"
-    expense = query_executor(query, (expense_name, expense_value, expense_id), get_result=False)
+    try:
+        query = "UPDATE expenses SET expense = %s, value = %s WHERE id = %s"
+        expense = query_executor(query, (expense_name, expense_value, expense_id), get_result=False)
+        if not expense:
+            return {"error": "Expense doesn't exist"}, 404
+        return {}, 204
 
-    if not expense:
-        return {"error": "Expense doesn't exist"}, 404
-
-    return expense, 204
+    except Exception as e:
+        return {"error": "Failed to update expense"}, 500
 
 
 @app.route('/delete/<int:expense_id>', methods=['DELETE'])
@@ -76,13 +78,13 @@ def delete_expense(expense_id):
     """
     Removes an existing expense.
     """
-    query = "DELETE FROM expenses WHERE id = %s"
-    expense = query_executor(query, (expense_id,), get_result=False)
+    try:
+        query = "DELETE FROM expenses WHERE id = %s"
+        expense = query_executor(query, (expense_id,), get_result=False)
+        return {}, 200
 
-    if not expense:
-        return {"error": "Cannot retrieve expense"}, 404
-
-    return expense
+    except Exception as e:
+        return {"error": "Expense not found."}, 404
 
 
 if __name__ == '__main__':
