@@ -1,6 +1,7 @@
 from flask import Flask, request, g
 from dotenv import load_dotenv
 from spending_tracker.db import query_executor
+from validators import validate_create_expense
 
 load_dotenv()
 app = Flask(__name__)
@@ -39,16 +40,19 @@ def create_expense():
     """
     data = request.get_json()
 
-    expense_name = data.get('expense')
-    expense_value = data.get('value')
+    if not data:
+        return {"error": "Invalid input: No data provided"}, 400
 
-    try:
+    checker = validate_create_expense(data)
+
+    if checker:
+        expense_name = data.get('expense')
+        expense_value = data.get('value')
         query = "INSERT INTO expenses (expense, value) VALUES (%s, %s)"
         query_executor(query, (expense_name, expense_value), get_result=False)
         return {}, 201
-
-    except Exception as e:
-        return {"error": "Failed to create expense"}, 400
+    else:
+        return {"error": "Invalid input: Check 'expense' and 'value' fields"}, 400
 
 
 @app.route('/update', methods=['PUT'])
@@ -62,15 +66,16 @@ def update_expense():
     expense_value = data.get('value')
     expense_id = data.get("id")
 
-    try:
+    checker = validate_create_expense(data)
+
+    if checker:
         query = "UPDATE expenses SET expense = %s, value = %s WHERE id = %s"
         expense = query_executor(query, (expense_name, expense_value, expense_id), get_result=False)
         if not expense:
             return {"error": "Expense doesn't exist"}, 404
         return {}, 204
 
-    except Exception as e:
-        return {"error": "Failed to update expense"}, 500
+    return {"error": "Failed to update expense"}, 500
 
 
 @app.route('/delete/<int:expense_id>', methods=['DELETE'])
