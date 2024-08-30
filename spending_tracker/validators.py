@@ -1,4 +1,7 @@
 def validate_create_expense(payload):
+    if not payload:
+        return False
+
     expense_name = payload.get('expense')
     expense_value = payload.get('value')
 

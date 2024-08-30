@@ -8,11 +8,11 @@ def init_db():
 
     try:
         query_executor(create_table_query, get_result=False)
-
     except Exception as e:
-        return {"error": "Cannot create table"}
+        return f"Cannot create table due to: {e!r}"
+    return "Database init successful"
 
 
 if __name__ == "__main__":
-    with app.app_context(): #ensures Flask context is available so that g is accessible
-        init_db()
+    with app.app_context():  # Ensures Flask context is available so that g is accessible
+        print(init_db())

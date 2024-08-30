@@ -1,13 +1,15 @@
+import os
+
 from flask import Flask, request, g
 from dotenv import load_dotenv
 from spending_tracker.db import query_executor
-from validators import validate_create_expense
+from spending_tracker.validators import validate_create_expense
 
 load_dotenv()
 app = Flask(__name__)
 
 
-@app.route('/', methods=["GET"])
+@app.route('/expenses', methods=["GET"])
 def expense_data():
     """
     Returns all the expenses from the database.
@@ -40,45 +42,39 @@ def create_expense():
     """
     data = request.get_json()
 
-    if not data:
-        return {"error": "Invalid input: No data provided"}, 400
+    if not validate_create_expense(data):
+        return {"error": "Invalid payload"}, 400
 
-    checker = validate_create_expense(data)
-
-    if checker:
-        expense_name = data.get('expense')
-        expense_value = data.get('value')
-        query = "INSERT INTO expenses (expense, value) VALUES (%s, %s)"
-        query_executor(query, (expense_name, expense_value), get_result=False)
-        return {}, 201
-    else:
-        return {"error": "Invalid input: Check 'expense' and 'value' fields"}, 400
+    expense_name = data.get('expense')
+    expense_value = data.get('value')
+    query = "INSERT INTO expenses (expense, value) VALUES (%s, %s)"
+    query_executor(query, (expense_name, expense_value), get_result=False)
+    return {}, 201
 
 
-@app.route('/update', methods=['PUT'])
-def update_expense():
+@app.route('/expenses/<int:expense_id>', methods=['PUT'])
+def update_expense(expense_id: int):
     """
     Update an already existing expense
     """
     data = request.get_json()
 
+    if not validate_create_expense(data):
+        return {"error": "Invalid payload"}, 400
+
     expense_name = data.get('expense')
     expense_value = data.get('value')
-    expense_id = data.get("id")
 
-    checker = validate_create_expense(data)
+    query = "UPDATE expenses SET expense = %s, value = %s WHERE id = %s"
+    try:
+        query_executor(query, (expense_name, expense_value, expense_id), get_result=False)
+    except Exception as e:
+        print(f"{e!r}")
 
-    if checker:
-        query = "UPDATE expenses SET expense = %s, value = %s WHERE id = %s"
-        expense = query_executor(query, (expense_name, expense_value, expense_id), get_result=False)
-        if not expense:
-            return {"error": "Expense doesn't exist"}, 404
-        return {}, 204
-
-    return {"error": "Failed to update expense"}, 500
+    return {}, 204
 
 
-@app.route('/delete/<int:expense_id>', methods=['DELETE'])
+@app.route('/expenses/<int:expense_id>', methods=['DELETE'])
 def delete_expense(expense_id):
     """
     Removes an existing expense.
@@ -93,4 +89,4 @@ def delete_expense(expense_id):
 
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(debug=os.getenv("ENVIRONMENT").lower() == "dev")
