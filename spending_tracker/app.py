@@ -89,4 +89,4 @@ def delete_expense(expense_id):
 
 
 if __name__ == '__main__':
-    app.run(debug=os.getenv("ENVIRONMENT").lower() == "dev")
+    app.run(debug=os.getenv("ENVIRONMENT") == "dev")  # Removed .lower() due to error 'NoneType' obj has no atr 'lower'
