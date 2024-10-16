@@ -1,13 +1,16 @@
 import os
+from sre_parse import parse
 
 from flask import Flask, request, g
 from dotenv import load_dotenv
 from spending_tracker.db import query_executor
+from spending_tracker.helpers import parse_expense
 from spending_tracker.validators import validate_create_expense
 
 load_dotenv()
 app = Flask(__name__)
 
+# TODO: Yavore vrushtai i ID na get zaqvkata
 
 @app.route('/expenses', methods=["GET"])
 def expense_data():
@@ -17,7 +20,7 @@ def expense_data():
     data = query_executor("SELECT expense, value FROM expenses ORDER BY expense")
     if data is None:
         return {"error": "Cannot retrieve data"}
-    return dict(data), 200
+    return [parse_expense(expense) for expense in data], 200
 
 
 @app.route('/expenses/<int:expense_id>', methods=['GET'])
@@ -27,12 +30,12 @@ def get_expense(expense_id):
     """
 
     query = "SELECT expense, value FROM expenses WHERE id = %s"
-    expense = query_executor(query, (expense_id,))
+    query_result = query_executor(query, (expense_id,))
 
-    if not expense:
+    if not query_result:
         return {"error": "Expense doesn't exist"}, 404
 
-    return dict(expense), 200
+    return parse_expense(query_result[0]), 200
 
 
 @app.route('/expenses', methods=['POST'])

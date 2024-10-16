@@ -42,7 +42,7 @@ def query_executor(query, args=None, get_result=True):
             cur.execute(query, args)
         else:
             cur.execute(query)
-            conn.commit()
+        conn.commit()
         if get_result:
             data = cur.fetchall()
     finally:
