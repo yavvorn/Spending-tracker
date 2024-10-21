@@ -3,6 +3,7 @@ from sre_parse import parse
 
 from flask import Flask, request, g
 from dotenv import load_dotenv
+from flask_cors import CORS
 from spending_tracker.db import query_executor
 from spending_tracker.helpers import parse_expense
 from spending_tracker.validators import validate_create_expense
@@ -10,6 +11,8 @@ from spending_tracker.validators import validate_create_expense
 load_dotenv()
 app = Flask(__name__)
 
+# Allow requests from the React app
+CORS(app)
 
 # TODO: Yavore vrushtai i ID na get zaqvkata - gotovo, papi
 
