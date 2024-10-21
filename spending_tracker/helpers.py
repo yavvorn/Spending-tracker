@@ -1,2 +1,2 @@
 def parse_expense(expense):
-    return {"expense": expense[0], "value": float(expense[1])}
+    return {"id": expense[0], "expense": expense[1], "value": float(expense[2])}

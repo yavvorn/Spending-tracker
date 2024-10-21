@@ -10,14 +10,15 @@ from spending_tracker.validators import validate_create_expense
 load_dotenv()
 app = Flask(__name__)
 
-# TODO: Yavore vrushtai i ID na get zaqvkata
+
+# TODO: Yavore vrushtai i ID na get zaqvkata - gotovo, papi
 
 @app.route('/expenses', methods=["GET"])
 def expense_data():
     """
     Returns all the expenses from the database.
     """
-    data = query_executor("SELECT expense, value FROM expenses ORDER BY expense")
+    data = query_executor("SELECT id, expense, value FROM expenses ORDER BY id")
     if data is None:
         return {"error": "Cannot retrieve data"}
     return [parse_expense(expense) for expense in data], 200
@@ -29,7 +30,7 @@ def get_expense(expense_id):
     Returns a particular expense and if nonexistent returns an error.
     """
 
-    query = "SELECT expense, value FROM expenses WHERE id = %s"
+    query = "SELECT id, expense, value FROM expenses WHERE id = %s"
     query_result = query_executor(query, (expense_id,))
 
     if not query_result:
@@ -92,4 +93,4 @@ def delete_expense(expense_id):
 
 
 if __name__ == '__main__':
-    app.run(debug=os.getenv("ENVIRONMENT") == "dev")  # Removed .lower() due to error 'NoneType' obj has no atr 'lower'
+    app.run(debug=os.getenv("ENVIRONMENT").lower() == "dev")
