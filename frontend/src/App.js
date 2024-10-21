@@ -2,9 +2,10 @@ import React, { useEffect, useState } from "react";
 
 export default function App() {
   return (
-    <div>
-      {" "}
+    <div className="app">
+      <Logo />
       <Expenses />
+      <Message />
     </div>
   );
 }
@@ -28,15 +29,34 @@ function Expenses() {
   }
 
   return (
-    <div>
-      <h1>Expenses trololo</h1>
+    <div className="list">
       <ul>
         {expenses.map((expense) => (
-          <li key={expense.id}>
-            {expense.expense}: ${expense.value}
-          </li>
+          <Expense expense={expense} key={expense.id} />
         ))}
       </ul>
     </div>
+  );
+}
+
+function Logo() {
+  return <h1>Expenses trololo</h1>;
+}
+
+function Expense({ expense }) {
+  return (
+    <li>
+      <span>
+        {expense.expense} {expense.value}
+      </span>
+    </li>
+  );
+}
+
+function Message() {
+  return (
+    <footer className="message">
+      <em>You're a musty crusty spender</em>
+    </footer>
   );
 }
