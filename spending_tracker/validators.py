@@ -12,3 +12,5 @@ def validate_create_expense(payload):
         return False
 
     return True
+
+# TODO - create validate_user function
