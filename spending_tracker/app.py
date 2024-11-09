@@ -1,17 +1,14 @@
 import os
-from sre_parse import parse
-
+from flask_bcrypt import Bcrypt
 from flask import Flask, request, g
 from dotenv import load_dotenv
 from spending_tracker.db import query_executor
-from spending_tracker.helpers import parse_expense
-from spending_tracker.validators import validate_create_expense
+from spending_tracker.helpers import parse_expense, password_hash
+from spending_tracker.validators import validate_create_expense, email_validator, password_validator
 
 load_dotenv()
 app = Flask(__name__)
 
-
-# TODO: Yavore vrushtai i ID na get zaqvkata - gotovo, papi
 
 @app.route('/expenses', methods=["GET"])
 def expense_data():
@@ -39,23 +36,6 @@ def get_expense(expense_id):
     return parse_expense(query_result[0]), 200
 
 
-# tva raboti
-# @app.route('/expenses', methods=['POST'])
-# def create_expense():
-#     """
-#     Creates a new expense
-#     """
-#     data = request.get_json()
-#
-#     if not validate_create_expense(data):
-#         return {"error": "Invalid payload"}, 400
-#
-#     expense_name = data.get('expense')
-#     expense_value = data.get('value')
-#     query = "INSERT INTO expenses (expense, value) VALUES (%s, %s)"
-#     query_executor(query, (expense_name, expense_value), get_result=False)
-#     return {}, 201
-
 @app.route('/expenses', methods=['POST'])
 def create_expense():
     """
@@ -68,7 +48,7 @@ def create_expense():
 
     expense_name = data.get('expense')
     expense_value = data.get('value')
-    user_id = data.get('user_id')  # TODO - tva trqq se vzima ot sesiqta, nz kak
+    user_id = data.get('user_id')  # TODO - tva trqq se vzima ot sesiqta, nz kak - use JWT TOKENS AUTH
     query = "INSERT INTO expenses (expense, value, user_id) VALUES (%s, %s, %s)"
     query_executor(query, (expense_name, expense_value, user_id), get_result=False)
     return {}, 201
@@ -110,6 +90,9 @@ def delete_expense(expense_id):
         return {"error": "Expense not found."}, 404
 
 
+# TODO papka routers - expense/users
+
+
 @app.route('/users', methods=['POST'])
 def create_user():
     """
@@ -117,12 +100,24 @@ def create_user():
     """
 
     data = request.get_json()
+    bcrypt = Bcrypt(app)
 
     username = data.get('username')
-    user_email = data.get('email')  # TODO need to validate email with regex
-    user_password = data.get('password')  # TODO need to do hashing
+    user_email = data.get('email')
+    user_password = data.get('password')
+
+    validated_email = email_validator(user_email)
+    if validated_email == "Invalid Email.":
+        return {"error": "Invalid email address provided."}, 400
+
+    if not password_validator(user_password):
+        return {
+            "error": "Password must contain at least one uppercase letter, one number, and one special character."}, 400
+
+    db_password = password_hash(user_password, bcrypt)
+
     query = "INSERT INTO users (username, email, password) VALUES (%s, %s, %s)"
-    query_executor(query, (username, user_email, user_password), get_result=False)
+    query_executor(query, (username, user_email, db_password), get_result=False)
     return {}, 201
 
 
@@ -145,6 +140,8 @@ def update_user(user_id: int):
 
     return {}, 204
 
+
+# TODO /me - who is you
 
 @app.route('/users/<int:user_id>', methods=['DELETE'])
 def delete_user(user_id):

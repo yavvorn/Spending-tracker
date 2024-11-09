@@ -79,3 +79,5 @@ def test_delete_expense_unsuccessful(mocker):
     response = app.test_client().delete(f"/expenses/{expense_to_delete}")
     assert response.status_code == 404
     assert response.json == {"error": "Expense not found."}
+
+# TODO - unittests for users
