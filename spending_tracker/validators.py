@@ -17,9 +17,6 @@ def validate_create_expense(payload):
     return True
 
 
-# TODO - create validate_user function which will validate the email through regex and validate password
-# (one capital letter, one symbol and one number)
-
 def email_validator(user_email):
     """
     Validates the user email
