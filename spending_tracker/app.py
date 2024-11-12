@@ -2,8 +2,8 @@ import os
 from flask import Flask
 from dotenv import load_dotenv
 from spending_tracker.extensions import bcrypt
-from routes.users import users_bp
-from routes.expenses import expenses_bp
+from .routes.users import users_bp
+from .routes.expenses import expenses_bp
 
 load_dotenv()
 app = Flask(__name__)

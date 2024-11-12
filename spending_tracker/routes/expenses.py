@@ -5,6 +5,7 @@ from spending_tracker.validators import validate_create_expense
 
 expenses_bp = Blueprint('expenses', __name__)
 
+
 @expenses_bp.route('/expenses', methods=["GET"])
 def expense_data():
     """
@@ -14,6 +15,7 @@ def expense_data():
     if data is None:
         return {"error": "Cannot retrieve data"}
     return [parse_expense(expense) for expense in data], 200
+
 
 @expenses_bp.route('/expenses/<int:expense_id>', methods=['GET'])
 def get_expense(expense_id):
@@ -27,6 +29,7 @@ def get_expense(expense_id):
         return {"error": "Expense doesn't exist"}, 404
 
     return parse_expense(query_result[0]), 200
+
 
 @expenses_bp.route('/expenses', methods=['POST'])
 def create_expense():
@@ -44,6 +47,7 @@ def create_expense():
     query = "INSERT INTO expenses (expense, value, user_id) VALUES (%s, %s, %s)"
     query_executor(query, (expense_name, expense_value, user_id), get_result=False)
     return {}, 201
+
 
 @expenses_bp.route('/expenses/<int:expense_id>', methods=['PUT'])
 def update_expense(expense_id: int):
@@ -65,6 +69,7 @@ def update_expense(expense_id: int):
         print(f"{e!r}")
 
     return {}, 204
+
 
 @expenses_bp.route('/expenses/<int:expense_id>', methods=['DELETE'])
 def delete_expense(expense_id):
