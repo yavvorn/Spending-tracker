@@ -9,7 +9,6 @@ def test_home_route(mocker):
     mocker.patch('spending_tracker.routes.expenses.query_executor', new=query_executor_mock)
     response = app.test_client().get("/expenses")
     expected_response = [{"id": 13, "expense": "Food", "value": 150}]
-
     assert response.status_code == 200
     assert response.json == expected_response
 
@@ -46,6 +45,7 @@ def test_create_expense_failure():
     response = app.test_client().post("/expenses", json=new_expense_data)
     assert response.status_code == 400
     assert response.json == {"error": "Invalid payload"}
+
 
 def test_update_expense_happy_path(mocker):
     update_expense_data = {"id": 123, "expense": "Groceries", "value": 150}

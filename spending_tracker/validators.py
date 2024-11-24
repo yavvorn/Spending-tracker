@@ -24,17 +24,14 @@ def email_validator(user_email):
     :return: The email if it's correct and error if it's not.
     """
     pattern = r"^[a-zA-Z0-9]+[a-zA-Z0-9._%+-]*@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$"
-    try:
-        if re.fullmatch(pattern, user_email):
-            return user_email
-        else:
-            return "Invalid Email."
-    except Exception as e:
-        return f'Invalid Email.'
+    if re.fullmatch(pattern, user_email):
+        return user_email
+    return "Invalid Email."
 
 
 def password_validator(password):
     """
+    Regex requires one Capital, one lower, one special character and one number.
     :param password: the password inputed by the to-be user.
     :return: True if the password has the necessary characters and False if not.
     """

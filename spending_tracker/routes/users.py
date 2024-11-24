@@ -41,6 +41,16 @@ def update_user(user_id: int):
     user_email = data.get('email')
     user_password = data.get('password')
 
+    validated_email = email_validator(user_email)
+    if validated_email == "Invalid Email.":
+        return {"error": "Invalid email address provided."}, 400
+
+    if not password_validator(user_password):
+        return {
+            "error": "Password must contain at least one uppercase letter, one number, and one special character."}, 400
+
+    db_password = password_hash(user_password, bcrypt)
+
     query = "UPDATE users SET username = %s, email = %s, password = %s WHERE id = %s"
     try:
         query_executor(query, (username, user_email, user_password, user_id), get_result=False)
