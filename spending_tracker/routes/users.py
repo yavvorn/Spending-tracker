@@ -71,3 +71,5 @@ def delete_user(user_id):
         return {}, 200
     except Exception as e:
         return {"error": "User not found."}, 404
+
+
