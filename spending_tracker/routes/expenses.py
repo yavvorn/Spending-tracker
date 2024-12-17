@@ -12,13 +12,14 @@ expenses_bp = Blueprint('expenses', __name__)
 @jwt_required()
 def expense_data():
     """
-    Returns all the expenses from the database.
+    Get the spending data for the logged-in user.
     """
     user_id = get_jwt_identity()
-    data = query_executor(f"SELECT id, expense, value FROM expenses WHERE user_id={user_id} ORDER BY id")
-    if data is None:
-        return {"error": "Cannot retrieve data"}
-    return [parse_expense(expense) for expense in data], 200
+
+    query = "SELECT id, expense, value FROM expenses WHERE user_id = %s"
+    spending_data = query_executor(query, (user_id,), get_result=True)
+
+    return [parse_expense(expense) for expense in spending_data], 200
 
 
 @expenses_bp.route('/expenses/<int:expense_id>', methods=['GET'])

@@ -7,15 +7,16 @@ from flask_jwt_extended import get_jwt_identity, jwt_required
 users_bp = Blueprint('users', __name__)
 
 
-
-@users_bp.route('/users', methods=['PUT'])  # TODO: Make this a PATCH request and support partial updates
+@users_bp.route('/users', methods=['PUT'])  # TODO: Make this a PATCH request and support partial updates\
 @jwt_required()
 def update_user():
     """
     Update an existing user.
     """
     user_id = get_jwt_identity()
+
     data = request.get_json()
+    # triple if check data.get username/email.pass etc. to do partial updates
     username = data.get('username')
     user_email = data.get('email')
     user_password = data.get('password')

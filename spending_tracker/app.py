@@ -1,7 +1,7 @@
 import os
 from flask import Flask
 from dotenv import load_dotenv
-from spending_tracker.extensions import bcrypt
+from spending_tracker.helpers import bcrypt
 from spending_tracker.routes.users import users_bp
 from spending_tracker.routes.expenses import expenses_bp
 from flask_jwt_extended import JWTManager

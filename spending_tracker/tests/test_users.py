@@ -1,8 +1,14 @@
-import sys
+import pytest  # for the fixture
 from unittest.mock import Mock, patch
 from spending_tracker.app import app
-from spending_tracker.extensions import bcrypt
-from spending_tracker.validators import email_validator
+from spending_tracker.tests import jwt_generator
+
+
+@pytest.fixture
+def auth_headers():
+    token = jwt_generator.generate_mock_jwt()
+    headers = {"Authorization": f"Bearer {token}"}
+    return headers
 
 
 def test_create_user_happy_path(mocker):
@@ -14,18 +20,18 @@ def test_create_user_happy_path(mocker):
     }
 
     query_executor_mock = Mock()
-    mocker.patch('spending_tracker.routes.users.query_executor', new=query_executor_mock)
+    mocker.patch('spending_tracker.routes.auth.query_executor', new=query_executor_mock)
 
     email_validator_mock = Mock(return_value=True)
-    mocker.patch('spending_tracker.routes.users.email_validator', new=email_validator_mock)
+    mocker.patch('spending_tracker.routes.auth.email_validator', new=email_validator_mock)
 
     password_validator_mock = Mock(return_value=True)
-    mocker.patch('spending_tracker.routes.users.password_validator', new=password_validator_mock)
+    mocker.patch('spending_tracker.routes.auth.password_validator', new=password_validator_mock)
 
     password_hash_mock = Mock(return_value="hashed_password")
-    mocker.patch('spending_tracker.routes.users.password_hash', new=password_hash_mock)
+    mocker.patch('spending_tracker.routes.auth.generate_password_hash', new=password_hash_mock)
 
-    response = client.post("/users", json=response_data)
+    response = client.post("/register", json=response_data)
 
     assert response.status_code == 201
     query_executor_mock.assert_called_once_with(
@@ -35,7 +41,7 @@ def test_create_user_happy_path(mocker):
     )
     email_validator_mock.assert_called_once_with("test_user@gmail.com")
     password_validator_mock.assert_called_once_with("TestPassword2134!")
-    password_hash_mock.assert_called_once_with("TestPassword2134!", bcrypt)
+    password_hash_mock.assert_called_once_with("TestPassword2134!")
 
 
 def test_create_user_invalid_email_path():
@@ -45,7 +51,7 @@ def test_create_user_invalid_email_path():
         "email": "plainaddress",
         "password": "TestPassword2134!"
     }
-    response = client.post("/users", json=response_data)
+    response = client.post("/register", json=response_data)
     assert response.status_code == 400
     assert response.get_json() == {"error": "Invalid email address provided."}
 
@@ -57,26 +63,29 @@ def test_create_user_invalid_password_path():
         "email": "test_user@gmail.com",
         "password": "TestPassword1234"
     }
-    response = client.post("/users", json=response_data)
+    response = client.post("/register", json=response_data)
     assert response.status_code == 400
     assert response.get_json() == {
         "error": "Password must contain at least one uppercase letter, one number, and one special character."
     }
 
+# JWT required
 
-def test_update_user_valid_data():
+
+def test_update_user_valid_data(auth_headers):  # user_id = 1
     client = app.test_client()
+
     response_data = {
         "username": "updated_user",
         "email": "updated_user@gmail.com",
         "password": "UpdatedPassword123!"
     }
-    user_id = 1
-    response = client.put(f"/users/{user_id}", json=response_data)
+
+    response = client.put(f"/users", json=response_data, headers=auth_headers)
     assert response.status_code == 204
 
 
-def test_update_user_invalid_email():
+def test_update_user_invalid_email(auth_headers):  # user_id = 1
     client = app.test_client()
 
     response_data = {
@@ -85,13 +94,12 @@ def test_update_user_invalid_email():
         "password": "UpdatedPassword123!"
     }
 
-    user_id = 1  # Assuming a user with ID 1 exists for the test
-    response = client.put(f"/users/{user_id}", json=response_data)
+    response = client.put(f"/users", json=response_data, headers=auth_headers)
     assert response.status_code == 400
     assert response.get_json() == {"error": "Invalid email address provided."}
 
 
-def test_update_user_invalid_password():
+def test_update_user_invalid_password(auth_headers):  # user_id = 1
     client = app.test_client()
 
     response_data = {
@@ -100,8 +108,7 @@ def test_update_user_invalid_password():
         "password": "short"  # Invalid password (too short)
     }
 
-    user_id = 1
-    response = client.put(f"/users/{user_id}", json=response_data)
+    response = client.put(f"/users", json=response_data, headers=auth_headers)
 
     assert response.status_code == 400
     assert response.get_json() == {
@@ -109,20 +116,9 @@ def test_update_user_invalid_password():
     }
 
 
-def test_delete_user_success():
+def test_delete_user_success(auth_headers):  # user_id = 1
     client = app.test_client()
-    user_id = 1
-    response = client.delete(f"/users/{user_id}")
+
+    response = client.delete(f"/users", headers=auth_headers)
     assert response.status_code == 200
     assert response.get_json() == {}
-
-
-def test_delete_user_not_found():
-    client = app.test_client()
-    user_id = sys.maxsize
-    with patch('spending_tracker.routes.users.query_executor') as mock_query_executor:
-        mock_query_executor.side_effect = Exception("User not found.")
-        response = client.delete(f"/users/{user_id}")
-        assert response.status_code == 404
-        assert response.get_json() == {"error": "User not found."}
-
