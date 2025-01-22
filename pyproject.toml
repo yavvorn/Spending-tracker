@@ -12,6 +12,7 @@ psycopg2-binary = "^2.9.9"
 python-dotenv = "^1.0.1"
 flask-bcrypt = "^1.0.1"
 flask-jwt-extended = "^4.6.0"
+sqlalchemy = "^2.0.37"
 
 
 [tool.poetry.group.dev.dependencies]
