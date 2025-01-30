@@ -8,7 +8,7 @@ from flask_jwt_extended import get_jwt_identity, jwt_required
 users_bp = Blueprint('users', __name__)
 
 
-@users_bp.route('/users', methods=['PATCH'])  # TODO: Make this a PATCH request and support partial updates\
+@users_bp.route('/users', methods=['PATCH'])
 @jwt_required()
 def update_user():
     """
@@ -18,38 +18,54 @@ def update_user():
 
     data = request.get_json()
 
-    new_username = data.get('username')
-    new_user_email = data.get('email')
-    new_user_password = data.get('password')
-
     user_to_update = User.query.filter_by(id=user_id).first()
 
-    current_username = User.username
-    current_email = User.email
-    current_password = User.password
+    if not user_to_update:
+        return {"error": "User not found"}, 404
 
-    if new_username != current_username:
-        user_to_update.username = new_username
+    updates_made = False
 
-    if new_user_email != current_email:
-        user_email = email_validator(new_user_email)
-        if user_email == "Invalid Email.":
-            return {"error": "Invalid email address provided."}, 400
-        user_to_update.email = new_user_email
+    if 'username' in data:
+        new_username = data['username']
+        if new_username and new_username != user_to_update.username:
+            user_to_update.username = new_username
+            updates_made = True
 
-    if not password_validator(new_user_password):
-        return {
-            "error": "Password must contain at least one uppercase letter, "
-                     "one number, and one special character."}, 400
-    hashed_new_password = generate_password_hash(new_user_password)
+    if 'email' in data:
+        new_user_email = data['email']
+        if new_user_email:
+            user_email = email_validator(new_user_email)
+            if user_email == "Invalid Email.":
+                return {"error": "Invalid email address provided."}, 400
 
-    if hashed_new_password != current_password:
-        user_to_update.password = hashed_new_password
+            if new_user_email != user_to_update.email:
+                user_to_update.email = new_user_email
+                updates_made = True
 
-    db.session.commit()
+    if 'password' in data:
+        new_user_password = data['password']
+        if new_user_password:
+            if not password_validator(new_user_password):
+                return {
+                    "error": "Password must contain at least one uppercase letter, "
+                             "one number, and one special character."}, 400
 
-    return {}, 204
+            hashed_new_password = generate_password_hash(new_user_password)
 
+            if not check_password_hash(user_to_update.password, new_user_password):
+                user_to_update.password = hashed_new_password
+                updates_made = True
+
+    if updates_made:
+        try:
+            db.session.commit()
+            return {}, 204
+        except Exception as e:
+            db.session.rollback()
+            return {"error": "Failed to update user"}, 500
+
+    # No updates were made
+    return {"error": "No updates provided"}, 400
 
 @users_bp.route('/users', methods=['DELETE'])
 @jwt_required()

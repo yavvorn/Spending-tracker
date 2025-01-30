@@ -4,7 +4,12 @@ bcrypt = Bcrypt()
 
 
 def parse_expense(expense):
-    return {"id": expense[0], "expense": expense[1], "value": float(expense[2])}
+    return {
+        "id": getattr(expense, "id", None),
+        "expense": getattr(expense, "expense_name", None),
+        "value": float(getattr(expense, "expense_value", 0))
+    }
+
 
 
 def generate_password_hash(password):

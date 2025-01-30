@@ -1,7 +1,6 @@
 from flask import Blueprint, request, jsonify
-from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identity
+from flask_jwt_extended import create_access_token
 from sqlalchemy.exc import IntegrityError
-from spending_tracker.db import query_executor
 from spending_tracker.helpers import parse_expense, check_password_hash, generate_password_hash
 from spending_tracker.models import User, db
 from spending_tracker.validators import email_validator, password_validator
@@ -38,7 +37,7 @@ def register():
         db.session.commit()
         return {}, 201
 
-    except IntegrityError as e: #  should I use IntegrityError?
+    except IntegrityError as e:
         db.session.rollback()
         return{"error": "Username or email already exists."}, 409 #  conflict
 
@@ -46,7 +45,7 @@ def register():
         db.session.rollback()
         return {"error": "An error occurred with registration."}
 
-@auth_bp.route("/login", methods=["POST"])
+@auth_bp.route("/login", methods=["POST"]) # TODO to support login via email?
 def login():
     username = request.json.get("username")
     password = request.json.get("password")

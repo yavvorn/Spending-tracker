@@ -3,6 +3,7 @@ from spending_tracker.db import query_executor
 from spending_tracker.helpers import parse_expense
 from spending_tracker.validators import validate_create_expense
 from flask_jwt_extended import get_jwt_identity, jwt_required
+from spending_tracker.models import Expenses, db
 
 
 expenses_bp = Blueprint('expenses', __name__)
@@ -16,10 +17,9 @@ def expense_data():
     """
     user_id = get_jwt_identity()
 
-    query = "SELECT id, expense, value FROM expenses WHERE user_id = %s"
-    spending_data = query_executor(query, (user_id,), get_result=True)
+    expenses_to_get = Expenses.query.filter_by(user_id=user_id).all()
+    return [parse_expense(expense) for expense in expenses_to_get], 200
 
-    return [parse_expense(expense) for expense in spending_data], 200
 
 
 @expenses_bp.route('/expenses/<int:expense_id>', methods=['GET'])
@@ -29,13 +29,11 @@ def get_expense(expense_id):
     Returns a particular expense or an error if it doesn't exist.
     """
     user_id = get_jwt_identity()
-    query = f"SELECT id, expense, value FROM expenses WHERE id = %s AND user_id = %s"
-    query_result = query_executor(query, (expense_id, user_id))
+    expense_to_get = Expenses.query.filter_by(id=expense_id, user_id=user_id).first()
 
-    if not query_result:
+    if not expense_to_get:
         return {"error": "Expense doesn't exist"}, 404
-
-    return parse_expense(query_result[0]), 200
+    return parse_expense(expense_to_get), 200
 
 
 @expenses_bp.route('/expenses', methods=['POST'])
@@ -47,17 +45,28 @@ def create_expense():
     user_id = get_jwt_identity()
     data = request.get_json()
 
+    expense_name = data.get('expense')
+    expense_value = data.get('value')
+
+    new_expense = Expenses(
+        expense_name=expense_name,
+        expense_value=expense_value,
+        user_id=user_id
+    )
+
     if not validate_create_expense(data):
         return {"error": "Invalid payload"}, 400
 
-    expense_name = data.get('expense')
-    expense_value = data.get('value')
-    query = "INSERT INTO expenses (expense, value, user_id) VALUES (%s, %s, %s)"
-    query_executor(query, (expense_name, expense_value, user_id), get_result=False)
-    return {}, 201
+    try:
+        db.session.add(new_expense)
+        db.session.commit()
+        return {}, 201
+    except Exception as e:
+        db.session.rollback()
+        return {"error": f"Error occurred - {e!r}"}, 409
 
 
-@expenses_bp.route('/expenses/<int:expense_id>', methods=['PUT'])
+@expenses_bp.route('/expenses/<int:expense_id>', methods=['PATCH'])
 @jwt_required()
 def update_expense(expense_id: int):
     """
@@ -66,19 +75,36 @@ def update_expense(expense_id: int):
     data = request.get_json()
     user_id = get_jwt_identity()
 
+    expense_to_update = Expenses.query.filter_by(id=expense_id, user_id=user_id).first()
+
+    if not expense_to_update:
+        return {"error": "Expense not found"}, 404
+
+    updates_made = False
+
     if not validate_create_expense(data):
         return {"error": "Invalid payload"}, 400
 
-    expense_name = data.get('expense')
-    expense_value = data.get('value')
+    new_expense_name = data.get('expense')
+    new_expense_value = data.get('value')
 
-    query = "UPDATE expenses SET expense = %s, value = %s WHERE id = %s AND user_id = %s"
-    try:
-        query_executor(query, (expense_name, expense_value, expense_id, user_id), get_result=False)
-    except Exception as e:
-        print(f"{e!r}")
+    if "expense" in data:
+        if expense_to_update.expense_name != new_expense_name:
+            expense_to_update.expense_name = new_expense_name
+            updates_made = True
 
-    return {}, 204
+    if "value" in data:
+        if expense_to_update.expense_value != new_expense_value:
+            expense_to_update.expense_value = new_expense_value
+            updates_made = True
+
+    if updates_made:
+        try:
+            db.session.commit()
+            return {}, 204
+        except Exception as e:
+            db.session.rollback()
+            return {"error": f"Error occurred - {e!r}"}, 500
 
 
 @expenses_bp.route('/expenses/<int:expense_id>', methods=['DELETE'])
@@ -88,9 +114,14 @@ def delete_expense(expense_id):
     Deletes an existing expense.
     """
     user_id = get_jwt_identity()
-    try:
-        query = "DELETE FROM expenses WHERE id = %s AND user_id = %s"
-        query_executor(query, (expense_id, user_id), get_result=False)
-        return {}, 200
-    except Exception as e:
-        return {"error": "Expense not found."}, 404
+
+    expense_to_delete = Expenses.query.filter_by(id=expense_id, user_id=user_id).first()
+
+    if not expense_to_delete:
+        return ({"error": "Expense not found."}), 404
+
+    db.session.delete(expense_to_delete)
+    db.session.commit()
+
+    return {}, 200
+
