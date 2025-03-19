@@ -15,6 +15,7 @@ def get_db():
         )
         g.db_pool = db_pool
 
+
     db_pool = g.db_pool
     return db_pool.getconn()
 
@@ -25,29 +26,29 @@ def create_cursor():
     return cur, conn
 
 
-def query_executor(query, args=None, get_result=True):
-    """
-    Connects to the database and executes an SQL query.
-    :param cur: - instantiated cursor
-    :param query: SQL query
-    :param args: Placeholders for the SQL query
-    :param get_result: whether or not a result ought to be returned
-    :return: either a result or None
-    """
-    cur, conn = create_cursor()
-    data = None
-
-    try:
-        if args is not None:
-            cur.execute(query, args)
-        else:
-            cur.execute(query)
-        conn.commit()
-        if get_result:
-            data = cur.fetchall()
-    finally:
-        if cur is not None:
-            cur.close()
-        if conn is not None:
-            conn.close()
-    return data
+# def query_executor(query, args=None, get_result=True):
+#     """
+#     Connects to the database and executes an SQL query.
+#     :param cur: - instantiated cursor
+#     :param query: SQL query
+#     :param args: Placeholders for the SQL query
+#     :param get_result: whether or not a result ought to be returned
+#     :return: either a result or None
+#     """
+#     cur, conn = create_cursor()
+#     data = None
+#
+#     try:
+#         if args is not None:
+#             cur.execute(query, args)
+#         else:
+#             cur.execute(query)
+#         conn.commit()
+#         if get_result:
+#             data = cur.fetchall()
+#     finally:
+#         if cur is not None:
+#             cur.close()
+#         if conn is not None:
+#             conn.close()
+#     return data

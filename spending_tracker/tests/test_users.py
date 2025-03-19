@@ -10,7 +10,7 @@ def auth_headers():
     headers = {"Authorization": f"Bearer {token}"}
     return headers
 
-
+#ok
 def test_create_user_happy_path(mocker):
     client = app.test_client()
     response_data = {
@@ -19,8 +19,12 @@ def test_create_user_happy_path(mocker):
         "password": "TestPassword2134!"
     }
 
-    query_executor_mock = Mock()
-    mocker.patch('spending_tracker.routes.auth.query_executor', new=query_executor_mock)
+    user_mock = Mock()
+    user_class_mock = Mock(return_value=user_mock)
+    mocker.patch('spending_tracker.routes.auth.User', new=user_class_mock)
+
+    db_session_mock = Mock()
+    mocker.patch('spending_tracker.routes.auth.db.session', new=db_session_mock)
 
     email_validator_mock = Mock(return_value=True)
     mocker.patch('spending_tracker.routes.auth.email_validator', new=email_validator_mock)
@@ -34,16 +38,21 @@ def test_create_user_happy_path(mocker):
     response = client.post("/register", json=response_data)
 
     assert response.status_code == 201
-    query_executor_mock.assert_called_once_with(
-        "INSERT INTO users (username, email, password) VALUES (%s, %s, %s)",
-        ("test_user", "test_user@gmail.com", "hashed_password"),
-        get_result=False
+
+    user_class_mock.assert_called_once_with(
+        username="test_user",
+        email="test_user@gmail.com",
+        password="hashed_password"
     )
+
+    db_session_mock.add.assert_called_once_with(user_mock)
+    db_session_mock.commit.assert_called_once()
+
     email_validator_mock.assert_called_once_with("test_user@gmail.com")
     password_validator_mock.assert_called_once_with("TestPassword2134!")
     password_hash_mock.assert_called_once_with("TestPassword2134!")
 
-
+#ok
 def test_create_user_invalid_email_path():
     client = app.test_client()
     response_data = {
@@ -55,7 +64,7 @@ def test_create_user_invalid_email_path():
     assert response.status_code == 400
     assert response.get_json() == {"error": "Invalid email address provided."}
 
-
+#ok
 def test_create_user_invalid_password_path():
     client = app.test_client()
     response_data = {

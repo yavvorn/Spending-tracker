@@ -20,24 +20,18 @@ def validate_create_expense(payload):
 def email_validator(user_email):
     """
     Validates the user email
-    :param user_email: Ensures the email address is correct and follows a universal formula.
-    :return: The email if it's correct and error if it's not.
+    :param user_email: The email to validate
+    :return: True if email is valid, False otherwise
     """
     pattern = r"^[a-zA-Z0-9]+[a-zA-Z0-9._%+-]*@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$"
-    if re.fullmatch(pattern, user_email):
-        return user_email
-    return "Invalid Email."
+    return bool(re.fullmatch(pattern, user_email))
 
 
 def password_validator(password):
     """
-    Regex requires one Capital, one lower, one special character and one number.
-    :param password: the password inputed by the to-be user.
-    :return: True if the password has the necessary characters and False if not.
+    Validates that password meets complexity requirements.
+    :param password: the password input by the user
+    :return: True if the password meets requirements, False otherwise
     """
     pattern = r"^(?=.*[A-Z])(?=.*[a-z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$"
-
-    if re.fullmatch(pattern, password):
-        return True
-    else:
-        return False
+    return bool(re.fullmatch(pattern, password))

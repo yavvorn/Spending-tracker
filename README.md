@@ -14,3 +14,24 @@ How to run the project locally:
 5. Run the project.
 ENV VARS
 DDL SQL steps
+
+---
+
+GET localhost/expenses
+
+get localhost/expenses/day
+    - date - today
+        - get timestamp of start of day
+        - get timestamp of end of dat
+        - return getExpensesInPeriod(start, end)
+
+get localhost/expenses/week
+    - date - today
+        - get timestamp of start of week
+        - get timestamp of end of week
+        - return getExpensesInPeriod(start, end)
+
+get localhost/expenses/month
+get localhost/expenses/year
+
+-> getExpensesInPeriod(startTimestamp, stopTimestamp)
