@@ -79,8 +79,7 @@ def update_user():
 @jwt_required()
 def me():
     """
-    Get the authenticated user's profile and their spending data.
-    Returns user details and all associated expenses.
+    Get the authenticated user's profile and their data without the spending.
     """
     user_id = get_jwt_identity()
 
@@ -95,7 +94,6 @@ def me():
             "username": user.username,
             "email": user.email,
             "created_at": user.created_at.isoformat(),
-            #  "expenses": [parse_expense(expense) for expense in user.expenses] 
         }
 
         return user_data, 200
@@ -120,8 +118,9 @@ def delete_user():
         db.session.delete(user_to_delete)
         db.session.commit()
 
-        return {}, 204
+        return "", 204
 
     except Exception as e:
         db.session.rollback()
+        print(f"User deletion error: {str(e)}")
         return {"error": "Failed to delete user."}, 500

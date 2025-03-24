@@ -1,6 +1,8 @@
 import pytest  # for the fixture
 from unittest.mock import Mock, patch
 from spending_tracker.app import app
+from spending_tracker.helpers import generate_password_hash
+
 from spending_tracker.tests import jwt_generator
 
 
@@ -10,7 +12,7 @@ def auth_headers():
     headers = {"Authorization": f"Bearer {token}"}
     return headers
 
-#ok
+
 def test_create_user_happy_path(mocker):
     client = app.test_client()
     response_data = {
@@ -52,7 +54,7 @@ def test_create_user_happy_path(mocker):
     password_validator_mock.assert_called_once_with("TestPassword2134!")
     password_hash_mock.assert_called_once_with("TestPassword2134!")
 
-#ok
+# needs updating
 def test_create_user_invalid_email_path():
     client = app.test_client()
     response_data = {
@@ -64,7 +66,7 @@ def test_create_user_invalid_email_path():
     assert response.status_code == 400
     assert response.get_json() == {"error": "Invalid email address provided."}
 
-#ok
+# needs updating
 def test_create_user_invalid_password_path():
     client = app.test_client()
     response_data = {
@@ -78,11 +80,35 @@ def test_create_user_invalid_password_path():
         "error": "Password must contain at least one uppercase letter, one number, and one special character."
     }
 
-# JWT required
 
+def test_update_user_valid_data(mocker, auth_headers):
+    from spending_tracker.routes import users # tuk si pomognah s chatgpt
 
-def test_update_user_valid_data(auth_headers):  # user_id = 1
     client = app.test_client()
+
+    mock_user = Mock()
+    mock_user.id = 1
+    mock_user.username = "original_username"
+    mock_user.email = "original_email@gmail.com"
+    mock_user.password = "hashed_old_password"
+
+    query_mock = Mock()
+    filter_by_mock = Mock()
+    first_mock = Mock(return_value=mock_user)
+    filter_by_mock.first = first_mock
+    query_mock.filter_by = Mock(return_value=filter_by_mock)
+
+    user_class_mock = mocker.patch.object(users, 'User')
+    user_class_mock.query = query_mock
+
+    mocker.patch.object(users, 'email_validator', return_value=True)
+    mocker.patch.object(users, 'password_validator', return_value=True)
+    mocker.patch.object(users, 'check_password_hash', return_value=False)
+
+    mocker.patch.object(users, 'generate_password_hash', return_value="hashed_new_password")
+
+    db_session_mock = Mock()
+    mocker.patch.object(users, 'db').session = db_session_mock
 
     response_data = {
         "username": "updated_user",
@@ -90,44 +116,84 @@ def test_update_user_valid_data(auth_headers):  # user_id = 1
         "password": "UpdatedPassword123!"
     }
 
-    response = client.put(f"/users", json=response_data, headers=auth_headers)
-    assert response.status_code == 204
+    response = client.patch("/users", json=response_data, headers=auth_headers)
 
-
-def test_update_user_invalid_email(auth_headers):  # user_id = 1
-    client = app.test_client()
-
-    response_data = {
-        "username": "updated_user",
-        "email": "something.com",  # Invalid email (missing '@')
-        "password": "UpdatedPassword123!"
-    }
-
-    response = client.put(f"/users", json=response_data, headers=auth_headers)
-    assert response.status_code == 400
-    assert response.get_json() == {"error": "Invalid email address provided."}
-
-
-def test_update_user_invalid_password(auth_headers):  # user_id = 1
-    client = app.test_client()
-
-    response_data = {
-        "username": "updated_user",
-        "email": "updated_user@gmail.com",
-        "password": "short"  # Invalid password (too short)
-    }
-
-    response = client.put(f"/users", json=response_data, headers=auth_headers)
-
-    assert response.status_code == 400
-    assert response.get_json() == {
-        "error": "Password must contain at least one uppercase letter, one number, and one special character."
-    }
-
-
-def test_delete_user_success(auth_headers):  # user_id = 1
-    client = app.test_client()
-
-    response = client.delete(f"/users", headers=auth_headers)
     assert response.status_code == 200
-    assert response.get_json() == {}
+
+    assert mock_user.username == "updated_user"
+    assert mock_user.email == "updated_user@gmail.com"
+    assert mock_user.password == "hashed_new_password"
+
+    db_session_mock.commit.assert_called_once()
+
+
+@patch('spending_tracker.models.db.session')
+def test_update_user_invalid_email(mock_db_session, auth_headers):
+    client = app.test_client()
+
+    with patch('spending_tracker.models.User.query') as mock_query:
+        mock_user = Mock()
+        mock_user.id = 1
+        mock_user.username = "original_username"
+        mock_user.email = "original_email@gmail.com"
+
+        mock_query.filter_by.return_value.first.return_value = mock_user
+
+        response_data = {
+            "username": "updated_user",
+            "email": "something.com",  # Invalid email (missing '@')
+            "password": "UpdatedPassword123!"
+        }
+
+        response = client.patch("/users", json=response_data, headers=auth_headers)
+
+        assert response.status_code == 400
+        assert response.get_json() == {"error": "Invalid email address provided."}
+
+        mock_db_session.commit.assert_not_called()
+
+
+@patch('spending_tracker.models.db.session')
+def test_update_user_invalid_password(mock_db_session, auth_headers):
+    client = app.test_client()
+
+    with patch('spending_tracker.models.User.query') as mock_query:
+        mock_user = Mock()
+        mock_user.id = 1
+        mock_user.username = "original_username"
+        mock_user.email = "original_email@gmail.com"
+
+        mock_query.filter_by.return_value.first.return_value = mock_user
+
+        response_data = {
+            "username": "updated_user",
+            "email": "updated_user@gmail.com",
+            "password": "short"  # Invalid password (too short)
+        }
+
+        response = client.patch("/users", json=response_data, headers=auth_headers)
+
+        assert response.status_code == 400
+        assert response.get_json() == {
+            "error": "Password must contain at least one uppercase letter, one number, and one special character."
+        }
+
+        mock_db_session.commit.assert_not_called()
+
+
+@patch('spending_tracker.models.db.session')
+def test_delete_user_success(mock_db_session, auth_headers):
+    client = app.test_client()
+
+    with patch('spending_tracker.models.User.query') as mock_query:
+        mock_user = Mock()
+        mock_user.id = 1
+        mock_user.username = "testuser"
+
+        mock_query.filter_by.return_value.first.return_value = mock_user
+        response = client.delete("/users", headers=auth_headers)
+
+        assert response.status_code == 204
+
+        mock_db_session.delete.assert_called_once_with(mock_user)
+        mock_db_session.commit.assert_called_once()

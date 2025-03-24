@@ -19,7 +19,8 @@ class User(db.Model):
     password = db.Column(db.VARCHAR(64), unique=False, nullable=False)
     email = db.Column(db.VARCHAR(64), unique=True, nullable=False)
     created_at = db.Column(db.DateTime, nullable=False, server_default=func.now())
-    expenses = db.relationship('Expenses', backref='user', lazy=True)
+    expenses = db.relationship('Expenses', backref='user', lazy=True,
+                               cascade='all, delete-orphan')
 
 class Expenses(db.Model):
     """
